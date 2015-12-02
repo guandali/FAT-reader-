@@ -14,7 +14,6 @@ int ssize;
 int sec_num_first_FAT;
 int sec_num_first_root;
 int sec_num_first_data;
-int count = 0;
 char cur_name [256];
 
 // new struct for reading directory
@@ -35,7 +34,6 @@ void print_subdirectory(char * buf, long cur_buf_pos){
 }
 // read FAT table and returen a array of cluster
 void* FAT_read(int cluster_num, FILE* file){
-    count++;
     int* clusters = malloc(sizeof(int)*10); // store clusters found
     printf("cluster num: %d\n",cluster_num);
     int pos;
@@ -56,10 +54,10 @@ void* FAT_read(int cluster_num, FILE* file){
             break;          //return clusters;
         }
         
-        pos = (cluster_num/2)*3 + off_set;
+        pos = (cluster_num/2)*3 ;
         printf("pos %d\n",pos);
         // convert little endian
-        long num = (((buf[pos+2] & 0xff) <<16)|((buf[pos+1] & 0xff) <<8)|(buf[pos] & 0xff) );
+        long num = (buf[pos] & 0xff) + ((buf[pos+1] & 0xff) <<8) + ((buf[pos+2] & 0xff) <<16);
         printf("num is %d\n", (int)num);
         
         if(cluster_num%2){
@@ -223,14 +221,15 @@ void directory_read(FILE *file, long cur_buf_pos){
             if ((attri & 0x10)&&(start_cluster>0)){
                 // if has subdirectory, go read FAT
                 int* clusters = FAT_read(start_cluster, file);//FAT_read return an array of clusters
-                int count = 0;
-                if (clusters[count] != 0) {
+                int count_2 = 0;
+                // printf("count%d\n", count);
+                if ((clusters[count_2] >= 2)&(clusters[count_2]<=4095)) {
                     
-                    printf("clusters[count]%d\n", clusters[count]);
-                    long  new_pos = ((clusters[count] - 2) * 4 )*ssize + (sec_num_first_data * ssize);
+                    printf("clusters[count_2]%d\n", clusters[count_2]);
+                    long  new_pos = ((clusters[count_2] - 2) * 4 )*ssize + (sec_num_first_data * ssize);
                     printf("calling directory_read(file, new_pos)%ld\n",new_pos);
-                    // directory_read(file, new_pos);
-                    count++;
+                    directory_read(file, new_pos);
+                    count_2++;
                     
                 }
             }
@@ -306,7 +305,7 @@ int main(int argc, char *argv[]){
         fprintf(stderr, "Must pass an argument!\n");
         exit(1);
     }
-    file = fopen(argv[1],"rb"); // open file 
+    file = fopen(argv[1],"rb"); // open file
     //FILE *file = fopen("fat_volume.dat","rb");
     if (file==NULL) {
         printf("No such a file");
