@@ -30,8 +30,8 @@ typedef struct {
     
 }root_directory;
 void print_subdirectory(char * buf, long cur_buf_pos){
-
-
+    
+    
 }
 // read FAT table and returen a array of cluster
 void* FAT_read(int cluster_num, FILE* file){
@@ -45,7 +45,7 @@ void* FAT_read(int cluster_num, FILE* file){
     char* buf = malloc(2048); // As we know FAT table is 4 sectors 4*512 = 2048
     clu_read(file,off_set,  buf); // buf = whole FAT table
     
-     while (1) {
+    while (1) {
         int num_0;
         clusters[count] = cluster_num;
         count++;
@@ -54,11 +54,11 @@ void* FAT_read(int cluster_num, FILE* file){
             //exit(0);
             free(buf); // free buf at the end
             break;          //return clusters;
-            }
-
+        }
+        
         pos = (cluster_num/2)*3 + off_set;
         printf("pos %d\n",pos);
-         // convert little endian
+        // convert little endian
         long num = (((buf[pos+2] & 0xff) <<16)|((buf[pos+1] & 0xff) <<8)|(buf[pos] & 0xff) );
         printf("num is %d\n", (int)num);
         
@@ -71,10 +71,10 @@ void* FAT_read(int cluster_num, FILE* file){
         }
         
         printf("num_0 %d\n",num_0);
-
+        
         int cur_buf_pos = ((cluster_num - 2) * 4 )*ssize + sec_num_first_data * ssize;
         cluster_num = num_0;
-
+        
         
     }
     for (i = 0 ; i < 10; i++) {
@@ -84,8 +84,8 @@ void* FAT_read(int cluster_num, FILE* file){
     }
     return clusters;
     // free(buf); // free buf at the end
-
-
+    
+    
     
 }
 
@@ -136,14 +136,14 @@ int print_directory (root_directory* rd){
         printf("%s\n", fName);
     }
     else {
-      printf("%s\n", cur_name);
-      
+        printf("%s\n", cur_name);
+        
     }
-
-
-
-
-
+    
+    
+    
+    
+    
     
     // 0x10 = sub
     //printf("\n");
@@ -153,17 +153,17 @@ int print_directory (root_directory* rd){
     else{
         printf("%s\n","This file is a directory.");
         //cur_name =
-
+        
         
     }
     
     printf("The number of the first cluster:%d\n",start_cluster);
     
     
-//    if (sub_flag == 1) {
-//        FAT_read(start_cluster,buf);
-//        
-//    }
+    //    if (sub_flag == 1) {
+    //        FAT_read(start_cluster,buf);
+    //
+    //    }
     printf("\n");
     printf("\n");
     return start_cluster;
@@ -192,6 +192,7 @@ void directory_read(FILE *file, long cur_buf_pos){
         for (   j = 0; j<16; j++) {
             //printf("%c\n",buf_[cur_buf_pos]);
             if(buf_[cur_buf_pos] == 0){
+                free(buf_);
                 printf("%s\n", "************END***********");
                 return;
             }
@@ -218,7 +219,7 @@ void directory_read(FILE *file, long cur_buf_pos){
             int start_cluster = print_directory(rd);
             uint8_t attri = rd->attri ;
             free(rd);
-            free(buf_);
+            
             if ((attri & 0x10)&&(start_cluster>0)){
                 // if has subdirectory, go read FAT
                 int* clusters = FAT_read(start_cluster, file);//FAT_read return an array of clusters
@@ -228,12 +229,12 @@ void directory_read(FILE *file, long cur_buf_pos){
                     printf("clusters[count]%d\n", clusters[count]);
                     long  new_pos = ((clusters[count] - 2) * 4 )*ssize + (sec_num_first_data * ssize);
                     printf("calling directory_read(file, new_pos)%ld\n",new_pos);
-                    directory_read(file, new_pos);
+                    // directory_read(file, new_pos);
                     count++;
                     
                 }
             }
-          
+            
             
         }
     }
@@ -284,7 +285,7 @@ void sec_read(FILE *file, long off_set, char* sec_buf){
 }
 void clu_read(FILE *file,long  off_set,  char * clu_buf){
     
-   
+    
     fseek(file, 0L, off_set);
     fread(clu_buf,2048,1,file); // Read 4 sectors
     fseek(file, 0L, SEEK_SET);
@@ -297,8 +298,16 @@ void clu_read(FILE *file,long  off_set,  char * clu_buf){
 
 
 
-int main(){
-    FILE *file = fopen("fat_volume.dat","rb");
+int main(int argc, char *argv[]){
+    FILE *file;
+    if (argc < 2) {
+        /* read input */
+        /* give error message and exit */
+        fprintf(stderr, "Must pass an argument!\n");
+        exit(1);
+    }
+    file = fopen(argv[1],"rb"); // open file 
+    //FILE *file = fopen("fat_volume.dat","rb");
     if (file==NULL) {
         printf("No such a file");
         exit(0);
