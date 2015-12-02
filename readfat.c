@@ -8,10 +8,14 @@
 //similar to boot_sect_t
 void* sec_read(FILE *file, long off_set);
 void directory_read(char* buf_, long cur_buf_pos);
+void print_subdirectory(char * buf, long cur_buf_pos);
 int ssize;
 int sec_num_first_FAT;
 int sec_num_first_root;
 int sec_num_first_data;
+int count = 0;
+char cur_name [256];
+
 
 typedef struct {
     uint8_t file_name [8];
@@ -24,30 +28,37 @@ typedef struct {
     uint8_t file_size [4];
     
 }root_directory;
-void FAT_read(int cluster_num, char* buf){
+void print_subdirectory(char * buf, long cur_buf_pos){
+
+
+}
+void* FAT_read(int cluster_num, char* buf){
+    count++;
+    int* clusters = malloc(sizeof(int)*10); // store clusters found
+//    if (count ==100) {
+//        exit(0);
+//    }
     printf("cluster num: %d\n",cluster_num);
-    //int pos = ((cluster_num - 2) *4) * ssize + ssize;
-    //    long num = (buf[pos] & 0xff) + ((buf[pos+1] & 0xff) <<8) + ((buf[pos+2] & 0xff) <<16);
-    //    int first_num = num%4096;
-    //    int second_num = num/4096;
-    //    printf("%d\n",first_num);
-    //    printf("%d\n",second_num);
     int pos;
     int off_set = 512;
+    int i = 0;
+    int count = 0;
     
     //int cluster_array[10];
     while (1) {
         int num_0;
-        
+        clusters[count] = cluster_num;
+        count++;
+        if (!(((cluster_num>=2))&(cluster_num<=4086))) {
+            //printf("invalid : %d\n",cluster_num);
+            //exit(0);
+            return clusters;
+            }
+
         pos = (cluster_num/2)*3 + off_set;
         printf("pos %d\n",pos);
         long num = (((buf[pos+2] & 0xff) <<16)|((buf[pos+1] & 0xff) <<8)|(buf[pos] & 0xff) );
-        //
-        //              int first_num = num%4096;
-        //              int second_num = num/4096;
-        //              printf("%d\n",first_num);
-        //              printf("%d\n",second_num);
-        
+        printf("num is %d\n", (int)num);
         
         if(cluster_num%2){
             num_0 = num/4096;;
@@ -58,57 +69,29 @@ void FAT_read(int cluster_num, char* buf){
         }
         
         printf("num_0 %d\n",num_0);
-        int cur_buf_pos = ((cluster_num + 2) * 4 )*ssize + sec_num_first_data * ssize;
+
+        
+        int cur_buf_pos = ((cluster_num - 2) * 4 )*ssize + sec_num_first_data * ssize;
         //directory_read( buf, cur_buf_pos);
         cluster_num = num_0;
-        if (cluster_num  == 4095) {
-            printf("%s\n","end of FAT ");
-            return;
-        }
+
         
     }
-    //        if (((cluster_num>=2))&(cluster_num<=4086)) {
-    //            printf("uesed %d\n",cluster_num);
-    //
-    //        }
-    //        else{
-    //            printf("%s\n","end of cluster");
-    //            return;
-    //        }
-    
-    
-    //        printf("%d\n",num_);
-    //        cluster_array[i] = num_;
-    //        i++;
-    
-    //    }
-    
-    
-    //    for (int i = 0; i<10; i++) {
-    //        printf("cluster array: %d\n",cluster_array[i]);
-    //    }
-    
-    
-    //long cur_pos  = (sec_num_first_root * ssize) + ((num_ - 2) *4) * ssize;
-    //    printf("%s\n","********************read*******************1");
-    //    //directory_read(buf, cur_pos);
-    //    if ((num_ >= 4088)&(num_ <= 4095)){
-    //        printf("%s\n", "end ");
-    //        return;
-    //
-    //    }
-    //    if ((num_>=2)&(num_<=4079) ){
-    //        cur_pos = num_ * ssize;
-    //        //directory_read(buf, cur_pos);
-    //        //    FAT_read(cluster_num, buf);
-    //    }
-    //    FAT_read(cluster_num, buf);
+    for (i = 0 ; i < 10; i++) {
+        if (clusters[i]!=0)
+            printf("cluster is %d\n", clusters[i]);
+        
+    }
+
+
+
     
 }
 
-void print_directory (root_directory* rd, char* buf){
+int print_directory (root_directory* rd){
     // check if it has Subdirectory
-    int sub_flag = 0;
+    int sub_flag = 0; // 0 for no subdirectory
+    char fName[12]; // store file name + ext
     int start_cluster = (rd->start_cluster[1]<<8|rd->start_cluster[0]);
     int file_size = (rd->file_size[3]<<24 | rd->file_size[2]<<16 |rd->file_size[1]<<8|
                      rd->file_size[0]);
@@ -116,47 +99,75 @@ void print_directory (root_directory* rd, char* buf){
         sub_flag = 1;
         //printf("%s\n"," has Subdirectory " );
     }
+    //int i;
+    int temp = -1;
+    int i;
     printf("%s","Filename: \\" );
-    for (int i = 0; i<8;i++){
-        if(rd->file_name[i]!=' '){
-            printf("%c",rd->file_name[i] );
+    if (rd->file_name[0] != '.' ) {
+        
+        for (i = 0; i<8;i++){
+            if(rd->file_name[i]!=' '){
+                //printf("%c",rd->file_name[i] );
+                temp++;
+                fName[temp] = rd->file_name[i];
+                
+            }
             
         }
         
-    }
-    int i;
-    if(sub_flag==0) {
-        printf("%c",'.');
-        for (int i = 0;i< 3;i++){
-            if(rd->ext[i]!=' '){
-                printf("%c",rd->ext[i] );
-                
+        if(sub_flag==0) {
+            temp++;
+            fName[temp] = '.';
+            //printf("%c",'.');
+            for (i = 0;i< 3;i++){
+                if(rd->ext[i]!=' '){
+                    temp++;
+                    fName[temp] = rd->ext[i];
+                    //printf("%c",rd->ext[i] );
+                    
+                }
             }
+            
+            
         }
-        
+        temp++;
+        fName[temp] = '\0';
+        printf("%s\n", fName);
     }
+    else {
+      printf("%s\n", cur_name);
+      
+    }
+
+
+
+
+
     
     // 0x10 = sub
-    printf("\n");
+    //printf("\n");
     if (sub_flag==0) {
         printf("The size of the file :%d\n",file_size);
     }
     else{
         printf("%s\n","This file is a directory.");
-        //FAT_read(start_cluster,buf);
+        //cur_name =
+
         
     }
     
     printf("The number of the first cluster:%d\n",start_cluster);
     
     
-    if (sub_flag == 1) {
-        FAT_read(start_cluster,buf);
-        
-    }
+//    if (sub_flag == 1) {
+//        FAT_read(start_cluster,buf);
+//        
+//    }
     printf("\n");
     printf("\n");
+    return start_cluster;
     
+    //FAT_read(start_cluster,buf);
     
     
     
@@ -167,11 +178,13 @@ void print_directory (root_directory* rd, char* buf){
 void directory_read(char* buf_, long cur_buf_pos){
     
     int DIRECTORY_SIZE  = 32;
-    for (int i = 0 ; i < 32; i++) {
+    int i;
+    for ( i = 0 ; i < 32; i++) {
         // read 512 bytes each time
         // printf("%d\n",cur_buf_pos);
         //char* buf_ = sec_read(file, cur_buf_pos );
-        for ( int  j = 0; j<16; j++) {
+        int j;
+        for (   j = 0; j<16; j++) {
             //printf("%c\n",buf_[cur_buf_pos]);
             if(buf_[cur_buf_pos] == 0){
                 printf("%s\n", "************END***********");
@@ -196,23 +209,34 @@ void directory_read(char* buf_, long cur_buf_pos){
             rd->file_size[1] = buf_[cur_buf_pos+29];
             rd->file_size[2] = buf_[cur_buf_pos+30];
             rd->file_size[3] = buf_[cur_buf_pos+31];
-            print_directory(rd, buf_);
-            free(rd);
             cur_buf_pos = cur_buf_pos + DIRECTORY_SIZE;
-            
-            
-            
+            int start_cluster = print_directory(rd);
+            uint8_t attri = rd->attri ;
+            free(rd);
+            if ((attri & 0x10)&&(start_cluster>0)){
+                // if has subdirectory, go read FAT
+                int* clusters = FAT_read(start_cluster, buf_ );//FAT_read return an array of clusters
+                int count = 0;
+                if (clusters[count] != 0) {
+                    
+                    printf("clusters[count]%d\n", clusters[count]);
+                    long  new_pos = ((clusters[count] - 2) * 4 )*ssize + (sec_num_first_data * ssize);
+                    //directory_read(buf_, new_pos);
+                    count++;
+                    
+                }
+            }
+          
             
         }
-        
-        
     }
     
 }
 void* boot_read(char* buf){
     boot_sect_t* boot = malloc(sizeof(boot_sect_t));
     int buf_pos = 0;
-    for (int i = 0; i<3;i++){
+    int i;
+    for ( i = 0; i<3;i++){
         boot->jump_code[i] = buf[buf_pos];
         buf_pos++;
         
