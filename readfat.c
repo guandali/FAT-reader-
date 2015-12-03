@@ -7,10 +7,11 @@
 // struct root_directory
 //similar to boot_sect_t
 void sec_read(FILE *file, long off_set, char* sec_buf);
-void directory_read(FILE* file, long cur_buf_pos);
+void directory_read(FILE* file, long cur_buf_pos, int count_3);
 void print_subdirectory(char * buf, long cur_buf_pos);
 void clu_read(FILE *file,long  off_set,  char * clu_buf);
 int ssize;
+int csize;
 int sec_num_first_FAT;
 int sec_num_first_root;
 int sec_num_first_data;
@@ -28,10 +29,7 @@ typedef struct {
     uint8_t file_size [4];
     
 }root_directory;
-void print_subdirectory(char * buf, long cur_buf_pos){
-    
-    
-}
+
 // read FAT table and returen a array of cluster
 void* FAT_read(int cluster_num, FILE* file){
     int* clusters = malloc(sizeof(int)*10); // store clusters found
@@ -47,7 +45,7 @@ void* FAT_read(int cluster_num, FILE* file){
         int num_0;
         clusters[count] = cluster_num;
         count++;
-        if (!(((cluster_num>=2))&(cluster_num<=4086))) {
+        if (!((cluster_num>=2)&&(cluster_num<=4086))) {
             //printf("invalid : %d\n",cluster_num);
             //exit(0);
             free(buf); // free buf at the end
@@ -86,7 +84,7 @@ void* FAT_read(int cluster_num, FILE* file){
     
     
 }
-
+// print out a single directory
 int print_directory (root_directory* rd){
     // check if it has Subdirectory
     int sub_flag = 0; // 0 for no subdirectory
@@ -150,18 +148,11 @@ int print_directory (root_directory* rd){
     }
     else{
         printf("%s\n","This file is a directory.");
-        //cur_name =
         
         
     }
     
     printf("The number of the first cluster:%d\n",start_cluster);
-    
-    
-    //    if (sub_flag == 1) {
-    //        FAT_read(start_cluster,buf);
-    //
-    //    }
     printf("\n");
     printf("\n");
     return start_cluster;
@@ -174,7 +165,7 @@ int print_directory (root_directory* rd){
 // read_directory read information of root directory
 // call print_directory() to print
 
-void directory_read(FILE *file, long cur_buf_pos){
+void directory_read(FILE *file, long cur_buf_pos, int count_3){
     printf("current cur_buf_pos%d\n",cur_buf_pos);
     int DIRECTORY_SIZE  = 32;
     int i;
@@ -183,11 +174,12 @@ void directory_read(FILE *file, long cur_buf_pos){
     sec_read(file, cur_buf_pos,buf_);
     cur_buf_pos = 0;
     for ( i = 0 ; i < 32; i++) {
+        printf("\nsfsfsdfsfdsfsdfdsfsdfsdfdsfdsf\n");
         // read 512 bytes each time
         // printf("%d\n",cur_buf_pos);
         //char* buf_ = sec_read(file, cur_buf_pos );
         int j;
-        for (   j = 0; j<16; j++) {
+        for (j = 0; j<16; j++) {
             //printf("%c\n",buf_[cur_buf_pos]);
             if(buf_[cur_buf_pos] == 0){
                 free(buf_);
@@ -221,17 +213,26 @@ void directory_read(FILE *file, long cur_buf_pos){
             if ((attri & 0x10)&&(start_cluster>0)){
                 // if has subdirectory, go read FAT
                 int* clusters = FAT_read(start_cluster, file);//FAT_read return an array of clusters
-                int count_2 = 0;
+                                                              //int count_2 = 0;
                 // printf("count%d\n", count);
-                if ((clusters[count_2] >= 2)&(clusters[count_2]<=4095)) {
+                
+                //int count_3 = 0;
+                    for (count_3-1; count_3<20; count_3++) {
+                        if ((clusters[count_3] >= 2)&&(clusters[count_3]<4095)){
+                            printf("@@@@@@@@@@@@@@@@@%d\n", clusters[count_3]);
+
+                        printf("clusters[count_2]%d\n", clusters[count_3]);
+                        long  new_pos = ((clusters[count_3] - 2) * csize )*ssize + (sec_num_first_data * ssize);
+                        printf("calling directory_read(file, new_pos)   %ld\n",new_pos);
+                            //directory_read(file, new_pos,count_3+1);
+                        }
+                        //break;
+                    }
                     
-                    printf("clusters[count_2]%d\n", clusters[count_2]);
-                    long  new_pos = ((clusters[count_2] - 2) * 4 )*ssize + (sec_num_first_data * ssize);
-                    printf("calling directory_read(file, new_pos)%ld\n",new_pos);
-                    directory_read(file, new_pos);
-                    count_2++;
+
+                
                     
-                }
+
             }
             
             
@@ -239,6 +240,7 @@ void directory_read(FILE *file, long cur_buf_pos){
     }
     
 }
+// used to read boot
 void* boot_read(char* buf){
     boot_sect_t* boot = malloc(sizeof(boot_sect_t));
     int buf_pos = 0;
@@ -270,6 +272,7 @@ void* boot_read(char* buf){
     return boot;
     
 }
+// read 512 bytes once
 void sec_read(FILE *file, long off_set, char* sec_buf){
     
     
@@ -282,12 +285,13 @@ void sec_read(FILE *file, long off_set, char* sec_buf){
     
     
 }
+// read 2048 bytes once
 void clu_read(FILE *file,long  off_set,  char * clu_buf){
     
     
-    fseek(file, 0L, off_set);
-    fread(clu_buf,2048,1,file); // Read 4 sectors
-    fseek(file, 0L, SEEK_SET);
+    int READ_SIZE = 2048;
+    fseek(file, off_set, SEEK_SET);
+    fread(clu_buf,READ_SIZE,1,file);
     
     
     
@@ -330,6 +334,7 @@ int main(int argc, char *argv[]){
     free(sec_buf);
     ssize = (boot->ssize[1]<<8|boot->ssize[0]); //its sector size.
     printf("Sector Size: %i\n",ssize);
+    csize = boot->csize;
     printf("cluster size in sectors: %i\n",boot->csize);
     int reserved = (boot->reserved[1]<<8|boot->reserved[0]);//the number of reserved sectors on the disk.
     printf("The number of reserved sctor: %i\n",reserved);
@@ -355,7 +360,7 @@ int main(int argc, char *argv[]){
     //end of boot sec
     long cur_buf_pos = (sec_num_first_root)*ssize;
     //printf("%c\n",buf[cur_buf_pos]);
-    directory_read(file,cur_buf_pos);
+    directory_read(file,cur_buf_pos, 0);
     
     
     fclose(file); // close file
