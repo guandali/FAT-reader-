@@ -1,0 +1,119 @@
+Total before late penalty: [ /30]
+
+
+Notes:
+
+    1. Features  that are  only partially implemented  should be  graded, and
+       part marks awarded when applicable.
+
+    2. A correct implementation of parts 1  and 2, with no work done for part
+       3, will be worth 23/30. Students who also implemented part 3 correctly
+       may end up with 34/30.
+
+
+  Part 1: reading and interpreting the boot sector  [ /6]
+  ------------------------------------------------
+
+    The code should successfully read the first 512 bytes of the file [ /2]
+
+
+
+    The code should extract the appropriate bytes [  /1]
+
+
+
+    Integers written using more than 1 byte should be decoded correctly [  /2]
+
+
+
+    All of the requested information is printed out correctly [ /1]
+
+
+
+
+  Part 2: extracting information from the root directory [ /8]
+  ------------------------------------------------------
+
+
+    The program prints information about all files in the root directory. [ /3]
+
+
+
+    The program stops at the last valid entry. [ /2]
+
+
+
+    All of the information requested in part 2 is printed. [ /2]
+
+
+
+    Deleted files are not listed. [ /1]
+
+
+
+
+  Part 3: extracting information from all directories [ /11]
+  ---------------------------------------------------
+
+    Subdirectories of the root directory are visited [ /1]
+
+
+
+    The traversal is recursive so deeply nested files are also visited [ /3]
+        - Either   full  path  names   must  be   printed,  or   names  in
+          subdirectories must be located  below the names for their parent
+          and indented appropriately. [-0.5 if not done]
+
+
+
+
+    The lists of clusters for each file are printed out [ /4]
+        - Printing all of them as in 3, 6, 7, 8, 9, 12, 13, 14, 15, 16, 17
+          is fine.
+
+        - It is also fine to print a list in the format 3, 6-9, 12-17
+
+
+
+
+
+    All files in a directory using multiple clusters are visited [ /3]
+
+
+
+
+  Coding style and documentation [ /4]
+  ------------------------------
+
+        - the code is broken down into functions that have a well-defined
+          purpose. [/2]
+
+
+
+        - each function is preceded by a comment explaining what it does. [/1]
+
+
+
+        - variable names are meaningful [/1]
+
+
+
+  The code is reasonably efficient [ /2]
+  --------------------------------
+
+        - for instance,  the boot sector  and FAT  are read into  buffers and
+          information extracted from these buffers,  instead of doing a large
+          number of read() operations on 1 or 2 bytes each.
+
+
+
+  Time taken for the assignment [ /1]
+  -----------------------------
+
+
+
+  Bonus [ /3]
+  -----
+
+
+
