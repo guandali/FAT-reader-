@@ -1,4 +1,5 @@
 Total before late penalty: [26/30]
+    ***Total after 6.34% late penalty is 24.35
 
 
 Notes:
@@ -115,6 +116,7 @@ Notes:
 
   Bonus [0/3]
   -----
+
 
 
 
