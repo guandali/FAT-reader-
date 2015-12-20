@@ -7,8 +7,8 @@ Notes:
        part marks awarded when applicable.
 
     2. A correct implementation of parts 1  and 2, with no work done for part
-       3, will be worth 23/30. Students who also implemented part 3 correctly
-       may end up with 34/30.
+       3, will be worth 21/30. Students who also implemented part 3 correctly
+       may end up with 32/30.
 
 
   Part 1: reading and interpreting the boot sector  [6/6]
